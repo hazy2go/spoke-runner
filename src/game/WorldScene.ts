@@ -304,24 +304,31 @@ export class WorldScene extends Phaser.Scene {
     for (let i = 0; i < 88; i++) this.spawnRock(false);
   }
 
-  /** A free spot: clear of the hub, planets, rocks, pods and the ship. */
+  /**
+   * A free spot clear of the hub, planets, rocks, pods and the ship. Samples candidates and keeps
+   * the one with the most room, so even a crowded map never yields a spot inside something.
+   */
   freeSpot(minD: number, maxD: number, clearance: number) {
-    let x = 0;
-    let y = 0;
-    for (let tries = 0; tries < 60; tries++) {
+    let best = { x: 0, y: 0 };
+    let bestRoom = -Infinity;
+    for (let tries = 0; tries < 80; tries++) {
       const a = Math.random() * Math.PI * 2;
       const d = Phaser.Math.FloatBetween(minD, maxD);
-      x = Math.cos(a) * d;
-      y = Math.sin(a) * d;
-      const clear =
-        Math.hypot(x, y) > HUB_RING + 250 + clearance &&
-        this.planets.every(p => Phaser.Math.Distance.Between(x, y, p.x, p.y) > p.r + 200 + clearance) &&
-        this.rocks.every(r => Phaser.Math.Distance.Between(x, y, r.sprite.x, r.sprite.y) > r.r + clearance) &&
-        this.pods.every(p => Phaser.Math.Distance.Between(x, y, p.sprite.x, p.sprite.y) > 120 + clearance) &&
-        (!this.ship || Phaser.Math.Distance.Between(x, y, this.ship.x, this.ship.y) > 500);
-      if (clear) break;
+      const x = Math.cos(a) * d;
+      const y = Math.sin(a) * d;
+      // room = smallest gap to anything, beyond the required clearance
+      let room = Math.hypot(x, y) - (HUB_RING + 250 + clearance);
+      for (const p of this.planets) room = Math.min(room, Phaser.Math.Distance.Between(x, y, p.x, p.y) - (p.r + 200 + clearance));
+      for (const r of this.rocks) room = Math.min(room, Phaser.Math.Distance.Between(x, y, r.sprite.x, r.sprite.y) - (r.r + clearance));
+      for (const p of this.pods) room = Math.min(room, Phaser.Math.Distance.Between(x, y, p.sprite.x, p.sprite.y) - (120 + clearance));
+      if (this.ship) room = Math.min(room, Phaser.Math.Distance.Between(x, y, this.ship.x, this.ship.y) - 500);
+      if (room > bestRoom) {
+        bestRoom = room;
+        best = { x, y };
+      }
+      if (room >= 0) break;
     }
-    return { x, y };
+    return best;
   }
 
   spawnRock(fadeIn: boolean) {
