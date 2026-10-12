@@ -58,9 +58,21 @@ async function open(url, opts = {}) {
   page.on('pageerror', e => errors.push(String(e)));
   // errors raised inside the SODAX widget frame (wallet SDK metadata fetches etc.) are not ours
   page.on('console', m => m.type() === 'error' && !(m.location()?.url ?? '').startsWith('https://widget.sodax.com') && !/favicon|ERR_|status of 4/.test(m.text()) && errors.push(`${m.text()} @ ${m.location()?.url}`));
-  await page.goto(url, { waitUntil: 'networkidle' });
+  const requests = [];
+  page.on('requestfinished', async r => requests.push({ url: r.url(), status: (await r.response())?.status() }));
+  const u = new URL(url);
+  if (!opts.noHook) u.searchParams.set('test', '1');
+  await page.goto(u.toString(), { waitUntil: 'networkidle' });
   await page.waitForSelector('#boot.gone', { state: 'attached', timeout: 30000 });
-  return { page, errors, ctx };
+  return { page, errors, ctx, requests };
+}
+
+// First launch shows the flight briefing; dismiss it.
+async function launch(page, tap = false) {
+  await (tap ? page.tap('#btn-play') : page.click('#btn-play'));
+  await sleep(300);
+  if (await page.locator('#screen-intro').isVisible()) await (tap ? page.tap('#intro-go') : page.click('#intro-go'));
+  await sleep(400);
 }
 
 const S = (page, fn, arg) => page.evaluate(fn, arg);
@@ -96,11 +108,16 @@ const visible = (page, sel) => page.locator(sel).isVisible();
 
 // ---------------------------------------------------------------- A: real widget
 {
-  const { page, errors } = await open(urlA);
+  const { page, errors, requests } = await open(urlA);
   check('A1 title screen shows live networks', /networks live from the SODAX config/.test(await page.textContent('#live-text')), await page.textContent('#live-text'));
   await page.screenshot({ path: 'tests/out/a1-title.png' });
   await page.click('#btn-play');
-  await sleep(600);
+  await sleep(400);
+  check('A1b first launch shows the flight briefing', await visible(page, '#screen-intro'));
+  await page.screenshot({ path: 'tests/out/a1b-intro.png' });
+  await page.click('#intro-go');
+  await sleep(1500);
+  check('A1c soundtrack loads', requests.some(r => r.url.endsWith('/audio/theme.m4a') && r.status === 200));
   const g0 = await game(page);
   check('A2 run starts with a contract', g0.phase === 'playing' && g0.stage === 'pickup' && !!g0.from && !!g0.to, `${g0.from} -> ${g0.to}`);
 
@@ -207,8 +224,7 @@ const visible = (page, sel) => page.locator(sel).isVisible();
 // ---------------------------------------------------------------- B: lifecycle via mock widget
 {
   const { page, errors } = await open('http://localhost:5198/');
-  await page.click('#btn-play');
-  await sleep(400);
+  await launch(page);
   await S(page, () => (window.__spoke.state.fuel = 12));
   await teleport(page, 'from');
   await sleep(300);
@@ -250,8 +266,7 @@ const visible = (page, sel) => page.locator(sel).isVisible();
 {
   const { page, errors } = await open(urlA, { mobile: true });
   await page.screenshot({ path: 'tests/out/c1-mobile-title.png' });
-  await page.tap('#btn-play');
-  await sleep(500);
+  await launch(page, true);
   check('C1 touch controls appear on phones', await visible(page, '#stick'));
   const before = (await game(page)).ship;
   const box = await page.locator('#stick').boundingBox();
@@ -274,6 +289,12 @@ const visible = (page, sel) => page.locator(sel).isVisible();
   await page.screenshot({ path: 'tests/out/c4-mobile-widget.png' });
   check('C4 widget opens full-screen on phones', (await page.locator('.widget-sheet').boundingBox()).width >= 389);
   check('C5 no runtime errors', errors.length === 0, errors.slice(0, 3).join(' | '));
+}
+
+// ---------------------------------------------------------------- D: production hygiene
+{
+  const { page } = await open(urlA, { noHook: true });
+  check('D1 test hook is not exposed without ?test', await page.evaluate(() => typeof window.__spoke === 'undefined'));
 }
 
 await browser.close();

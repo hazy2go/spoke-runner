@@ -1277,3 +1277,148 @@ body.is-touch .desktop-only {
 #dock-fuel:has(+ #dock-repair.hidden) {
   grid-column: 1 / -1;
 }
+
+/* Intro */
+.intro-sheet {
+  width: min(640px, 100%);
+  padding: 28px;
+  text-align: center;
+}
+
+.intro-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.intro-step {
+  padding: 16px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+.intro-step img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 16px rgba(236, 193, 0, 0.25));
+}
+
+.intro-step b {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.intro-step b span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  color: #1a1300;
+  background: var(--gold);
+}
+
+.intro-step p,
+.intro-fuel p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.intro-fuel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(165, 92, 85, 0.25), rgba(20, 24, 52, 0.4));
+  border: 1px solid rgba(236, 193, 0, 0.35);
+}
+
+.intro-fuel img {
+  width: 46px;
+  height: 46px;
+  flex: none;
+}
+
+.intro-fuel p {
+  margin: 0;
+  color: #d6d3e4;
+}
+
+.intro-fuel b {
+  color: var(--gold-soft);
+}
+
+.intro-controls {
+  margin: 16px 0 20px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.intro-controls b {
+  color: var(--text);
+}
+
+#intro-go {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .intro-sheet {
+    padding: 22px 18px calc(22px + var(--safe-bottom));
+  }
+
+  .intro-steps {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .intro-step {
+    display: grid;
+    grid-template-columns: 52px 1fr;
+    align-items: center;
+    gap: 2px 12px;
+    padding: 10px 12px;
+    text-align: left;
+  }
+
+  .intro-step img {
+    grid-row: span 2;
+    width: 52px;
+    height: 52px;
+  }
+
+  .intro-step b {
+    justify-content: flex-start;
+    margin: 0;
+  }
+
+  .intro-step p {
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

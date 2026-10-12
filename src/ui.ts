@@ -47,6 +47,13 @@ export function initUI(opts: { scene: WorldScene; hub: Chain; spokes: Chain[]; l
     startRun();
   };
   $('btn-how').onclick = () => openHow(undefined);
+  $('intro-go').onclick = () => {
+    sfx.click();
+    state.saved.introSeen = true;
+    state.persist();
+    hide('screen-intro');
+    startRun();
+  };
 
   // HUD
   $('btn-pause').onclick = () => pause();
@@ -118,6 +125,11 @@ export function initUI(opts: { scene: WorldScene; hub: Chain; spokes: Chain[]; l
 }
 
 function startRun() {
+  if (!state.saved.introSeen) {
+    hide('screen-title');
+    show('screen-intro');
+    return;
+  }
   hide('screen-title');
   hide('screen-over');
   hide('screen-pause');
@@ -126,11 +138,7 @@ function startRun() {
   scene.newRun();
   state.phase = 'playing';
   state.emit();
-  bus.emit('toast', {
-    title: 'First contract posted',
-    body: 'Follow the gold arrow. Pick up cargo, relay it through the Sonic hub, deliver it.',
-    tone: 'gold',
-  });
+  bus.emit('toast', { title: 'Contract posted', body: 'Follow the gold arrow to your cargo.', tone: 'gold' });
 }
 
 function toTitle() {
@@ -315,6 +323,7 @@ function openWidget(chain: Chain | null) {
   });
   hide('screen-dock');
   show('screen-widget');
+  sfx.duck(true);
 }
 
 function setStatus(s: SwapStatus | 'idle' | 'ready') {
@@ -340,6 +349,7 @@ function onSwapStatus(status: SwapStatus) {
 }
 
 function closeWidget() {
+  sfx.duck(false);
   widgetCleanup?.();
   widgetCleanup = null;
   $('widget-frame-wrap').innerHTML = '';

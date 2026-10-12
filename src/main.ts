@@ -31,8 +31,10 @@ async function boot() {
   await created;
   initUI({ scene, hub, spokes, live });
   document.getElementById('boot')?.classList.add('gone');
-  // test hook for the end-to-end suite
-  (window as unknown as { __spoke: unknown }).__spoke = { scene, state };
+  // Test hook for the end-to-end suite only (tests load the page with ?test=1).
+  if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) {
+    (window as unknown as { __spoke: unknown }).__spoke = { scene, state };
+  }
 }
 
 void boot();

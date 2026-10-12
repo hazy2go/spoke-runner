@@ -132,7 +132,7 @@
           <div class="status-pill" id="widget-status" data-status="idle">Waiting for you</div>
           <button class="icon-btn close" id="widget-close" aria-label="Close"></button>
         </header>
-        <div class="widget-warning">Real swap on mainnet. Funds move for real; the game itself never needs it.</div>
+        <div class="widget-warning">Real swap on mainnet. Funds move for real; the game itself never needs it.<span class="touch-only"> On a phone, wallets connect best when you open this game inside your wallet app's browser.</span></div>
         <div class="widget-frame-wrap" id="widget-frame-wrap"></div>
         <footer class="widget-foot">
           <a id="widget-newtab" target="_blank" rel="noreferrer">Wallet not showing? Open in a new tab ↗</a>
@@ -170,6 +170,40 @@
           </p>
           <a class="btn btn-ghost small" href="https://github.com/hazy2go/spoke-runner" target="_blank" rel="noreferrer">Source on GitHub ↗</a>
         </div>
+      </div>
+    </section>
+
+    <!-- Intro (first run) -->
+    <section id="screen-intro" class="screen dim hidden">
+      <div class="sheet intro-sheet">
+        <div class="eyebrow">Flight briefing</div>
+        <h2>Every route runs through the hub</h2>
+        <div class="intro-steps">
+          <div class="intro-step">
+            <img src="./art/crate.png" alt="" />
+            <b><span>1</span> Pick up</b>
+            <p>Fly to the glowing planet and dock to load the cargo.</p>
+          </div>
+          <div class="intro-step">
+            <img src="./art/hub.png" alt="" />
+            <b><span>2</span> Relay</b>
+            <p>Fly through the Sonic hub ring. Every SODAX route settles on Sonic.</p>
+          </div>
+          <div class="intro-step">
+            <img src="./art/planet_ocean.png" alt="" />
+            <b><span>3</span> Deliver</b>
+            <p>Dock at the destination before the timer runs out. Faster pays more.</p>
+          </div>
+        </div>
+        <div class="intro-fuel">
+          <img src="./art/fuel_pod.png" alt="" />
+          <p><b>Low on fuel?</b> Grab floating fuel pods, or dock anywhere: refuel with game credits, or for real with the SODAX swap widget built into every station.</p>
+        </div>
+        <div class="intro-controls">
+          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>E</b> dock · <b>Esc</b> pause · or hold the mouse to fly</span>
+          <span class="touch-only">Drag the left stick to fly · hold Brake to slow down · tap Dock near a planet</span>
+        </div>
+        <button class="btn btn-gold" id="intro-go">Let's fly</button>
       </div>
     </section>
 

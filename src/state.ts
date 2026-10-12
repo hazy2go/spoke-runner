@@ -19,7 +19,7 @@ export const MAX_HULL = 3;
 
 const STORE_KEY = 'spoke-runner:v1';
 
-type Saved = { best: number; realRefuels: string[]; goldTrail: boolean; muted: boolean };
+type Saved = { best: number; realRefuels: string[]; goldTrail: boolean; muted: boolean; introSeen: boolean };
 
 function load(): Saved {
   try {
@@ -29,9 +29,10 @@ function load(): Saved {
       realRefuels: Array.isArray(raw.realRefuels) ? raw.realRefuels.filter((k: unknown) => typeof k === 'string') : [],
       goldTrail: raw.goldTrail === true,
       muted: raw.muted === true,
+      introSeen: raw.introSeen === true,
     };
   } catch {
-    return { best: 0, realRefuels: [], goldTrail: false, muted: false };
+    return { best: 0, realRefuels: [], goldTrail: false, muted: false, introSeen: false };
   }
 }
 

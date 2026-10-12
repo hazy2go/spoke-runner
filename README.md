@@ -63,7 +63,8 @@ The widget's messages carry a status and nothing else: no amounts, tokens or tra
 - **Live networks:** planets come from `https://api.sodax.com/v2/be/config/all`, so a new SODAX network shows up as a new planet with no release. A bundled list keeps the game playable offline.
 - **Quote-only routes:** networks the widget can't sign on (Bitcoin, ICON) still quote, and the widget hands off to SODAX to finish.
 - **Phones and desktop:** touch joystick and tap-to-dock on phones, keyboard or mouse on desktop. The widget opens full screen on phones.
-- **Art:** every image was generated with GPT Image through the Codex CLI. Sounds are synthesized in the browser with Web Audio.
+- **Art and audio:** every image was generated with GPT Image through the Codex CLI, and the soundtrack with Higgsfield (Sonilo). Sound effects are synthesized in the browser with Web Audio.
+- **First-run briefing** explains pick up, relay through the hub, deliver. Reduced-motion settings are respected.
 
 ## Run it
 
@@ -74,11 +75,12 @@ npm run build      # static site in dist/
 npm run test:e2e   # end-to-end suite
 ```
 
-The end-to-end suite (`tests/e2e.mjs`, Playwright) runs 31 checks:
+The end-to-end suite (`tests/e2e.mjs`, Playwright) runs 34 checks:
 
 - **Against the live widget:** flight, docking, contracts, the hub relay, delivery, refuel, damage and game over. It also checks that the real widget loads inside the station with the correct locked gas token, and that spoofed messages are ignored.
 - **Against a local mock widget** that speaks the same message protocol: the started, submitted and completed lifecycle, without moving any funds.
 - **On a phone viewport:** touch controls, tap-to-dock and the full-screen widget.
+- **Production checks:** the briefing, the soundtrack, and that the test hook (enabled with `?test=1`) is off by default.
 
 ## Stack
 

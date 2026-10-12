@@ -13,6 +13,7 @@ const THRUST = 560;
 const MAX_SPEED = 470;
 const FUEL_BURN = 5.2; // per second at full thrust
 const DOCK_SPEED = 170;
+const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 type Planet = {
   chain: Chain;
@@ -365,7 +366,7 @@ export class WorldScene extends Phaser.Scene {
       this.cargo.setVisible(false);
       sfx.deliver();
       bus.emit('toast', { title: `Delivered to ${p.chain.name}`, body: `+${c.reward} credits, +${bonus} speed bonus`, tone: 'gold' });
-      this.cameras.main.flash(250, 236, 193, 0, false);
+      if (!REDUCED_MOTION) this.cameras.main.flash(250, 236, 193, 0, false);
       this.assignContract();
     }
   }
@@ -571,8 +572,8 @@ export class WorldScene extends Phaser.Scene {
         state.hull -= 1;
         this.invulnUntil = now + 1600;
         sfx.hit();
-        this.cameras.main.shake(260, 0.012);
-        this.cameras.main.flash(120, 255, 70, 60, false);
+        if (!REDUCED_MOTION) this.cameras.main.shake(260, 0.012);
+        if (!REDUCED_MOTION) this.cameras.main.flash(120, 255, 70, 60, false);
         if (state.hull <= 0) {
           this.gameOver('Hull breached by an asteroid.');
           return;
@@ -717,7 +718,7 @@ export class WorldScene extends Phaser.Scene {
       state.saved.best = state.score;
       state.persist();
     }
-    this.cameras.main.shake(400, 0.02);
+    if (!REDUCED_MOTION) this.cameras.main.shake(400, 0.02);
     bus.emit('gameOver', undefined);
     state.emit();
   }

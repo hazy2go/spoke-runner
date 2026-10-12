@@ -1,10 +1,12 @@
 import { state } from './state';
 
-/** Small synthesized sound set: no audio files to ship, nothing to license. */
+/** Synthesized sound effects plus one looping soundtrack file. */
 class Sfx {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private thrustGain: GainNode | null = null;
+  private musicGain: GainNode | null = null;
+  private musicStarted = false;
 
   private ensure() {
     if (!this.ctx) {
@@ -20,6 +22,33 @@ class Sfx {
 
   unlock() {
     this.ensure();
+    void this.startMusic();
+  }
+
+  /** Looping soundtrack (generated with Higgsfield Sonilo). A buffer loop is gapless, unlike <audio loop>. */
+  private async startMusic() {
+    if (this.musicStarted) return;
+    this.musicStarted = true;
+    const ctx = this.ensure();
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}audio/theme.m4a`);
+      const buf = await ctx.decodeAudioData(await res.arrayBuffer());
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      this.musicGain = ctx.createGain();
+      this.musicGain.gain.setValueAtTime(0, ctx.currentTime);
+      this.musicGain.gain.linearRampToValueAtTime(0.42, ctx.currentTime + 2.5);
+      src.connect(this.musicGain).connect(this.master!);
+      src.start();
+    } catch {
+      this.musicStarted = false; // decoding failed (old browser): play on without music
+    }
+  }
+
+  /** Lower the soundtrack while the swap widget is open. */
+  duck(on: boolean) {
+    if (this.musicGain && this.ctx) this.musicGain.gain.setTargetAtTime(on ? 0.1 : 0.42, this.ctx.currentTime, 0.3);
   }
 
   setMuted(muted: boolean) {
