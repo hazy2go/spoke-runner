@@ -2232,3 +2232,25 @@ body.is-touch .desktop-only {
     bottom: auto;
   }
 }
+
+/* Mid-size windows: the mission card moves under the stats panel instead of colliding with the gauges */
+@media (min-width: 761px) and (max-width: 1180px) {
+  .hud-mission {
+    top: calc(112px + var(--safe-top));
+    left: 14px;
+    transform: none;
+    width: min(440px, calc(100vw - 380px));
+  }
+
+  #toasts {
+    top: calc(238px + var(--safe-top));
+    left: 14px;
+    transform: none;
+    width: min(440px, calc(100vw - 380px));
+    align-items: flex-start;
+  }
+
+  .boss-bar {
+    top: calc(238px + var(--safe-top));
+  }
+}

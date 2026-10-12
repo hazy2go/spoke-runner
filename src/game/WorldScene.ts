@@ -211,12 +211,17 @@ export class WorldScene extends Phaser.Scene {
     g.destroy();
   }
 
+  /**
+   * Camera zoom also scales screen-fixed (scrollFactor 0) objects around the screen center,
+   * so the backdrop and star layers are sized up by 1/zoom to always cover the viewport.
+   */
   layout() {
     const { width, height } = this.scale;
-    const cover = Math.max(width / this.bg.width, height / this.bg.height) * 1.15;
+    const zoom = Phaser.Math.Clamp(Math.min(width, height) / 1100, 0.42, 0.85);
+    this.cameras.main.setZoom(zoom);
+    const cover = (Math.max(width / this.bg.width, height / this.bg.height) * 1.2) / zoom;
     this.bg.setPosition(width / 2, height / 2).setScale(cover);
-    for (const ts of this.stars) ts.setPosition(width / 2, height / 2).setSize(width, height);
-    this.cameras.main.setZoom(Phaser.Math.Clamp(Math.min(width, height) / 1100, 0.42, 0.85));
+    for (const ts of this.stars) ts.setPosition(width / 2, height / 2).setSize(width / zoom + 4, height / zoom + 4);
   }
 
   // ---------------------------------------------------------------- world building
@@ -889,8 +894,8 @@ export class WorldScene extends Phaser.Scene {
       ts.tilePositionX = cam.scrollX * f;
       ts.tilePositionY = cam.scrollY * f;
     });
-    this.bg.x = this.scale.width / 2 - cam.scrollX * 0.01;
-    this.bg.y = this.scale.height / 2 - cam.scrollY * 0.01;
+    this.bg.x = this.scale.width / 2 - Phaser.Math.Clamp(cam.scrollX * 0.01, -30, 30);
+    this.bg.y = this.scale.height / 2 - Phaser.Math.Clamp(cam.scrollY * 0.01, -30, 30);
     this.hubSprite.rotation += dt * 0.08;
     this.hubGlow.setAlpha(0.65 + Math.sin(this.time.now / 600) * 0.15);
     for (const p of this.planets) {
@@ -1168,11 +1173,15 @@ export class WorldScene extends Phaser.Scene {
     const ang = Math.atan2(sy - cy, sx - cx);
     const ex = Phaser.Math.Clamp(cx + Math.cos(ang) * width, margin, width - margin);
     const ey = Phaser.Math.Clamp(cy + Math.sin(ang) * height, margin + 70, height - margin);
-    const s = 16 * (1 + Math.sin(this.time.now / 160) * 0.12);
+    // this graphics object is screen-fixed, which the camera zoom scales around the center: undo that
+    const z = cam.zoom;
+    const lx = cx + (ex - cx) / z;
+    const ly = cy + (ey - cy) / z;
+    const s = (16 * (1 + Math.sin(this.time.now / 160) * 0.12)) / z;
     const hostile = state.mission?.kind === 'boss' || state.mission?.kind === 'bounty';
     g.fillStyle(hostile ? 0xff4d3d : 0xecc100, 0.95);
     g.lineStyle(2, 0x0b0e22, 1);
-    const pts = [0, 2.5, -2.5].map(o => new Phaser.Math.Vector2(ex + Math.cos(ang + o) * s, ey + Math.sin(ang + o) * s));
+    const pts = [0, 2.5, -2.5].map(o => new Phaser.Math.Vector2(lx + Math.cos(ang + o) * s, ly + Math.sin(ang + o) * s));
     g.fillPoints(pts, true);
     g.strokePoints(pts, true);
   }
