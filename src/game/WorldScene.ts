@@ -8,15 +8,15 @@ import { touch } from '../input';
 import planetArt from '../planets.json';
 
 const GENERIC_PLANETS = ['planet_ice', 'planet_gas', 'planet_lava', 'planet_ocean', 'planet_desert', 'planet_violet'];
-const WORLD_RADIUS = 2700;
+const WORLD_RADIUS = 3450;
 const HUB_RING = 270;
 const ROTATE_SPEED = 3.6;
 const THRUST = 560;
 const MAX_SPEED = 470;
-const FUEL_BURN = 5.2;
+const FUEL_BURN = 4.1; // tuned with the 1.28x map so a mission costs the same share of the tank
 const DOCK_SPEED = 170;
 const REDUCED_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const DMG = { asteroid: 20, bolt: 9, ram: 14, bossBolt: 12 };
+const DMG = { asteroid: 20, bolt: 7, ram: 10, bossBolt: 12 }; // bot bolt and ram 25% lower than v2.0
 
 type Planet = {
   chain: Chain;
@@ -31,7 +31,7 @@ type Planet = {
   scanRing: Phaser.GameObjects.Image;
 };
 
-type Rock = { sprite: Phaser.GameObjects.Image; vx: number; vy: number; spin: number; r: number };
+type Rock = { sprite: Phaser.GameObjects.Image; vx: number; vy: number; spin: number; r: number; hp: number; max: number };
 type Pod = { sprite: Phaser.GameObjects.Image };
 type Enemy = {
   kind: 'bot' | 'boss';
@@ -74,6 +74,7 @@ export class WorldScene extends Phaser.Scene {
   hubGlow!: Phaser.GameObjects.Image;
   lanes!: Phaser.GameObjects.Graphics;
   pointer!: Phaser.GameObjects.Graphics;
+  bars!: Phaser.GameObjects.Graphics;
   engine!: Phaser.GameObjects.Particles.ParticleEmitter;
   goldEngine!: Phaser.GameObjects.Particles.ParticleEmitter;
   boom!: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -145,6 +146,7 @@ export class WorldScene extends Phaser.Scene {
       emitting: false,
     }).setDepth(60);
     this.pointer = this.add.graphics().setScrollFactor(0).setDepth(200);
+    this.bars = this.add.graphics().setDepth(70);
 
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,E,SPACE,SHIFT,F,J') as Record<string, Phaser.Input.Keyboard.Key>;
@@ -261,8 +263,8 @@ export class WorldScene extends Phaser.Scene {
         this.planets.push({ chain, x, y, r, sprite, glow, badge, badgeRing, realRing, scanRing });
       });
     };
-    place(inner, 1050, 0.2);
-    place(outer, 1900, 0.05);
+    place(inner, 1350, 0.2);
+    place(outer, 2450, 0.05);
     this.refreshPlanetStatus();
   }
 
@@ -299,22 +301,54 @@ export class WorldScene extends Phaser.Scene {
   }
 
   buildRocks() {
-    const rng = new Phaser.Math.RandomDataGenerator(['rocks']);
-    for (let i = 0; i < 60; i++) {
-      let x = 0;
-      let y = 0;
-      for (let tries = 0; tries < 30; tries++) {
-        const a = rng.realInRange(0, Math.PI * 2);
-        const d = rng.realInRange(720, WORLD_RADIUS - 150);
-        x = Math.cos(a) * d;
-        y = Math.sin(a) * d;
-        if (this.planets.every(p => Phaser.Math.Distance.Between(x, y, p.x, p.y) > p.r + 230)) break;
-      }
-      const scale = rng.realInRange(0.18, 0.42);
-      const sprite = this.add.image(x, y, rng.pick(['asteroid_a', 'asteroid_b'])).setScale(scale);
-      sprite.rotation = rng.realInRange(0, 6.28);
-      this.rocks.push({ sprite, vx: rng.realInRange(-22, 22), vy: rng.realInRange(-22, 22), spin: rng.realInRange(-0.6, 0.6), r: 192 * scale * 0.36 });
+    for (let i = 0; i < 88; i++) this.spawnRock(false);
+  }
+
+  /** A free spot: clear of the hub, planets, rocks, pods and the ship. */
+  freeSpot(minD: number, maxD: number, clearance: number) {
+    let x = 0;
+    let y = 0;
+    for (let tries = 0; tries < 60; tries++) {
+      const a = Math.random() * Math.PI * 2;
+      const d = Phaser.Math.FloatBetween(minD, maxD);
+      x = Math.cos(a) * d;
+      y = Math.sin(a) * d;
+      const clear =
+        Math.hypot(x, y) > HUB_RING + 250 + clearance &&
+        this.planets.every(p => Phaser.Math.Distance.Between(x, y, p.x, p.y) > p.r + 200 + clearance) &&
+        this.rocks.every(r => Phaser.Math.Distance.Between(x, y, r.sprite.x, r.sprite.y) > r.r + clearance) &&
+        this.pods.every(p => Phaser.Math.Distance.Between(x, y, p.sprite.x, p.sprite.y) > 120 + clearance) &&
+        (!this.ship || Phaser.Math.Distance.Between(x, y, this.ship.x, this.ship.y) > 500);
+      if (clear) break;
     }
+    return { x, y };
+  }
+
+  spawnRock(fadeIn: boolean) {
+    const scale = Phaser.Math.FloatBetween(0.18, 0.42);
+    const r = 192 * scale * 0.36;
+    const { x, y } = this.freeSpot(900, WORLD_RADIUS - 150, r + 40);
+    const sprite = this.add.image(x, y, Phaser.Math.RND.pick(['asteroid_a', 'asteroid_b'])).setScale(scale);
+    sprite.rotation = Math.random() * 6.28;
+    if (fadeIn) {
+      sprite.setAlpha(0);
+      this.tweens.add({ targets: sprite, alpha: 1, duration: 1200 });
+    }
+    const hp = Math.round(1 + scale * 9); // 3 to 5 hits from a stock blaster
+    this.rocks.push({ sprite, vx: Phaser.Math.FloatBetween(-22, 22), vy: Phaser.Math.FloatBetween(-22, 22), spin: Phaser.Math.FloatBetween(-0.6, 0.6), r, hp, max: hp });
+  }
+
+  /** Shot-down asteroids burst, sometimes drop a fuel pod, and a new one drifts in later. */
+  breakRock(r: Rock) {
+    const i = this.rocks.indexOf(r);
+    if (i < 0) return;
+    this.rocks.splice(i, 1);
+    this.boom.explode(Math.round(r.r * 0.8), r.sprite.x, r.sprite.y);
+    sfx.explode(false);
+    if (Math.random() < 0.3) this.spawnPod(r.sprite.x, r.sprite.y);
+    else this.award(8, 4);
+    r.sprite.destroy();
+    this.time.delayedCall(20000, () => this.spawnRock(true));
   }
 
   buildShip() {
@@ -358,7 +392,7 @@ export class WorldScene extends Phaser.Scene {
     this.bolts.forEach(b => b.sprite.destroy());
     this.bolts = [];
     this.clearFreighter();
-    for (let i = 0; i < 6; i++) this.spawnPod();
+    for (let i = 0; i < 9; i++) this.spawnPod();
     this.cargo.setVisible(false);
     this.planets.forEach(p => p.scanRing.setAlpha(0));
   }
@@ -373,10 +407,10 @@ export class WorldScene extends Phaser.Scene {
     state.emit();
   }
 
-  spawnPod() {
-    const a = Math.random() * Math.PI * 2;
-    const d = Phaser.Math.Between(600, WORLD_RADIUS - 300);
-    const sprite = this.add.image(Math.cos(a) * d, Math.sin(a) * d, 'fuel_pod').setDisplaySize(54, 54).setDepth(30);
+  /** Fuel pods only appear in open space, never inside a planet, the hub or an asteroid. */
+  spawnPod(atX?: number, atY?: number) {
+    const spot = atX !== undefined && atY !== undefined ? { x: atX, y: atY } : this.freeSpot(700, WORLD_RADIUS - 300, 70);
+    const sprite = this.add.image(spot.x, spot.y, 'fuel_pod').setDisplaySize(54, 54).setDepth(30);
     this.tweens.add({ targets: sprite, scale: sprite.scale * 1.12, yoyo: true, repeat: -1, duration: 700, ease: 'Sine.easeInOut' });
     this.pods.push({ sprite });
   }
@@ -584,15 +618,15 @@ export class WorldScene extends Phaser.Scene {
       const y = around.y + Math.sin(a) * dist;
       const sprite = this.add.image(x, y, 'mev_bot').setDisplaySize(72, 72).setDepth(45).setAlpha(0);
       this.tweens.add({ targets: sprite, alpha: 1, duration: 500 });
-      const hp = 3 + Math.floor(rankInfo().index / 2);
+      const hp = (3 + Math.floor(rankInfo().index / 2)) * 0.75;
       this.enemies.push({ kind: 'bot', sprite, hp, max: hp, vx: 0, vy: 0, r: 30, fireAt: this.time.now + 1200 + Math.random() * 1200, spawnAt: this.time.now, orbit: Math.random() < 0.5 ? 1 : -1, bounty });
     }
   }
 
   spawnBoss() {
     const a = Math.random() * Math.PI * 2;
-    const x = Math.cos(a) * 2150;
-    const y = Math.sin(a) * 2150;
+    const x = Math.cos(a) * WORLD_RADIUS * 0.8;
+    const y = Math.sin(a) * WORLD_RADIUS * 0.8;
     const sprite = this.add.image(x, y, 'leviathan').setDisplaySize(300, 300).setDepth(46);
     const hp = Math.round(60 + rankInfo().index * 12);
     this.enemies.push({ kind: 'boss', sprite, hp, max: hp, vx: 0, vy: 0, r: 110, fireAt: this.time.now + 2500, spawnAt: this.time.now + 9000, orbit: 1, bounty: false });
@@ -659,7 +693,7 @@ export class WorldScene extends Phaser.Scene {
         }
         e.sprite.rotation = Math.atan2(dy, dx) + Math.PI / 2;
         if (now > e.fireAt && d < 750) {
-          e.fireAt = now + Phaser.Math.Between(1400, 2200);
+          e.fireAt = now + Phaser.Math.Between(1870, 2930);
           this.enemyFire(e, [0], 560, DMG.bolt);
         }
       } else {
@@ -720,8 +754,12 @@ export class WorldScene extends Phaser.Scene {
         }
         if (!hit) {
           for (const r of this.rocks) {
-            if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, r.sprite.x, r.sprite.y) < r.r) {
+            if (Phaser.Math.Distance.Between(b.sprite.x, b.sprite.y, r.sprite.x, r.sprite.y) < r.r + 4) {
               this.sparks.explode(4, b.sprite.x, b.sprite.y);
+              r.hp -= b.dmg;
+              r.sprite.setTintFill(0xffffff);
+              this.time.delayedCall(50, () => r.sprite.active && r.sprite.clearTint());
+              if (r.hp <= 0) this.breakRock(r);
               hit = true;
               break;
             }
@@ -883,6 +921,7 @@ export class WorldScene extends Phaser.Scene {
     this.checkClock();
     this.maybeAmbush();
     this.drawLanes(dt);
+    this.drawBars();
     this.drawPointer();
     if (Math.floor(this.gameTime / 100) !== Math.floor((this.gameTime - deltaMs) / 100)) state.emit();
   }
@@ -1153,6 +1192,26 @@ export class WorldScene extends Phaser.Scene {
       for (let s = 60 + this.laneDash; s < Math.min(d - 40, 520); s += 40) {
         g.lineBetween(this.ship.x + ux * s, this.ship.y + uy * s, this.ship.x + ux * (s + 16), this.ship.y + uy * (s + 16));
       }
+    }
+  }
+
+  /** Life bars over MEV bots (always) and over asteroids once they have been hit. */
+  drawBars() {
+    const g = this.bars;
+    g.clear();
+    const bar = (x: number, y: number, w: number, pct: number, color: number) => {
+      g.fillStyle(0x05060f, 0.85);
+      g.fillRoundedRect(x - w / 2 - 2, y - 2, w + 4, 9, 4);
+      g.fillStyle(color, 1);
+      g.fillRoundedRect(x - w / 2, y, Math.max(2, w * pct), 5, 2.5);
+    };
+    for (const e of this.enemies) {
+      if (e.kind !== 'bot') continue;
+      const pct = Math.max(0, e.hp / e.max);
+      bar(e.sprite.x, e.sprite.y - 52, 58, pct, pct > 0.5 ? 0xff6b5e : 0xff3b30);
+    }
+    for (const r of this.rocks) {
+      if (r.hp < r.max) bar(r.sprite.x, r.sprite.y - r.r - 16, 44, Math.max(0, r.hp / r.max), 0xd8c8a8);
     }
   }
 

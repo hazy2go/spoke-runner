@@ -258,6 +258,49 @@ async function pickFromBoard(page, kind) {
     [...scene.enemies].forEach(e => scene.killEnemy(e));
   });
 
+  // v2.1: bot life bars + 25% nerf, safe fuel pods, destructible asteroids
+  const botInfo = await S(page, () => {
+    const { scene } = window.__spoke;
+    scene.spawnBots(1, scene.ship, 600, false);
+    const e = scene.enemies.at(-1);
+    scene.drawBars();
+    const info = { max: e.max, barCmds: scene.bars.commandBuffer.length };
+    scene.killEnemy(e);
+    return info;
+  });
+  const rankIdx = await S(page, () => {
+    const xp = window.__spoke.profile.xp;
+    return [0, 300, 900, 2000, 3800, 6500, 10000].filter(t => xp >= t).length - 1;
+  });
+  check('A16b bots have 25% less hull and draw a life bar', Math.abs(botInfo.max - (3 + Math.floor(rankIdx / 2)) * 0.75) < 1e-9 && botInfo.barCmds > 0, `max hp ${botInfo.max}`);
+  const podsClear = await S(page, () => {
+    const { scene } = window.__spoke;
+    for (let i = 0; i < 40; i++) scene.spawnPod();
+    const bad = scene.pods.filter(
+      p =>
+        Math.hypot(p.sprite.x, p.sprite.y) < 400 ||
+        scene.planets.some(pl => Math.hypot(p.sprite.x - pl.x, p.sprite.y - pl.y) < pl.r + 60) ||
+        scene.rocks.some(r => Math.hypot(p.sprite.x - r.sprite.x, p.sprite.y - r.sprite.y) < r.r + 30),
+    ).length;
+    return { bad, total: scene.pods.length };
+  });
+  check('A16c fuel pods never spawn inside planets, the hub or asteroids', podsClear.bad === 0, `${podsClear.total} pods checked`);
+  const rockTest = await S(page, () => {
+    const { scene } = window.__spoke;
+    const r = scene.rocks[0];
+    r.vx = r.vy = 0;
+    scene.invulnUntil = scene.time.now + 60000;
+    scene.ship.setPosition(r.sprite.x, r.sprite.y + 260);
+    scene.ship.rotation = 0;
+    scene.vx = scene.vy = 0;
+    return { count: scene.rocks.length, hp: r.hp };
+  });
+  await page.keyboard.down('Space');
+  await sleep(2600);
+  await page.keyboard.up('Space');
+  const rocksAfter = await S(page, () => window.__spoke.scene.rocks.length);
+  check('A16d asteroids can be shot apart', rocksAfter === rockTest.count - 1, `hp ${rockTest.hp}, rocks ${rockTest.count} -> ${rocksAfter}`);
+
   // bounty
   await startKind(page, 'bounty');
   const bp = await S(page, () => window.__spoke.state.mission.planet.key);
