@@ -5,5 +5,6 @@ export const touch = {
   x: 0,
   y: 0,
   brake: false,
+  fire: false,
   dockRequested: false,
 };

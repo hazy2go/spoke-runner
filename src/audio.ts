@@ -1,4 +1,4 @@
-import { state } from './state';
+import { profile, save } from './progress';
 
 /** Synthesized sound effects plus one looping soundtrack file. */
 class Sfx {
@@ -12,7 +12,7 @@ class Sfx {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.master = this.ctx.createGain();
-      this.master.gain.value = state.saved.muted ? 0 : 0.55;
+      this.master.gain.value = profile.muted ? 0 : 0.55;
       this.master.connect(this.ctx.destination);
       this.startThrustBed();
     }
@@ -52,8 +52,8 @@ class Sfx {
   }
 
   setMuted(muted: boolean) {
-    state.saved.muted = muted;
-    state.persist();
+    profile.muted = muted;
+    save();
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(muted ? 0 : 0.55, this.ctx.currentTime, 0.05);
   }
 
@@ -129,6 +129,20 @@ class Sfx {
   }
   fanfare() {
     [392, 523, 659, 784, 1046, 1318].forEach((f, i) => this.tone(f, 0.4, 'triangle', 0.15, i * 0.07));
+  }
+  shoot() {
+    this.tone(1320, 0.07, 'square', 0.035, 0, 660);
+  }
+  enemyShot() {
+    this.tone(520, 0.12, 'sawtooth', 0.04, 0, 260);
+  }
+  explode(big: boolean) {
+    this.tone(big ? 90 : 140, big ? 1.1 : 0.4, 'sawtooth', big ? 0.35 : 0.2, 0, 30);
+    this.tone(big ? 60 : 220, big ? 0.9 : 0.25, 'triangle', 0.18, 0.03, 40);
+  }
+  scan() {
+    this.tone(880, 0.1, 'sine', 0.12);
+    this.tone(1320, 0.18, 'sine', 0.1, 0.08);
   }
   over() {
     [392, 330, 262, 196].forEach((f, i) => this.tone(f, 0.45, 'sine', 0.18, i * 0.16));

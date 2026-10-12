@@ -17,6 +17,12 @@ export type RefuelTarget = {
   token?: string;
 };
 
+/**
+ * The widget's default source is ETH on Base, a no-op for the Base station, so that station
+ * starts from ETH on Arbitrum instead (checked live: it quotes at the widget's default amount).
+ */
+const BASE = '0x2105.base';
+
 /** Brand the widget so it reads as part of the game. Every value is a documented query parameter. */
 const BRAND = {
   theme: 'dark',
@@ -38,6 +44,10 @@ export function widgetUrl(target?: RefuelTarget): string {
     if (target.token) {
       url.searchParams.set('dstToken', target.token);
       url.searchParams.set('lockDst', '1');
+    }
+    if (target.chain === BASE) {
+      url.searchParams.set('srcChain', '0xa4b1.arbitrum');
+      url.searchParams.set('srcToken', 'ETH');
     }
   }
   for (const [key, value] of Object.entries(BRAND)) url.searchParams.set(key, value);

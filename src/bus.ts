@@ -1,10 +1,13 @@
 import type { Chain } from './chains';
+import type { Mission } from './state';
 
 type Events = {
   toast: { title: string; body?: string; tone?: 'gold' | 'red' | 'blue' };
   dockAvailable: { name: string; slow?: boolean } | null;
   docked: { chain: Chain | null };
   gameOver: void;
+  board: Mission[];
+  victory: void;
   minimap: void;
 };
 

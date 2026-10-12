@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
     <meta name="theme-color" content="#05060f" />
     <title>Spoke Runner · a SODAX swap widget case study</title>
-    <meta name="description" content="A cargo run across every SODAX network. Dock anywhere and refuel for real with the embedded SODAX swap widget." />
+    <meta name="description" content="Link every SODAX network to the Sonic hub. Haul cargo, fight MEV bots, and refuel for real with the embedded SODAX swap widget." />
     <meta property="og:title" content="Spoke Runner" />
     <meta property="og:description" content="A space game with the real SODAX swap widget built in. One iframe, any site." />
     <meta property="og:image" content="https://hazy2go.github.io/spoke-runner/art/og.jpg" />
@@ -18,30 +18,42 @@
     <!-- HUD -->
     <div id="hud" class="hidden">
       <div class="hud-left glass">
-        <div class="stat"><span class="label">Credits</span><span class="value" id="hud-credits">0</span></div>
-        <div class="stat"><span class="label">Score</span><span class="value" id="hud-score">0</span></div>
-        <div class="stat small"><span class="label">Streak</span><span class="value" id="hud-streak">0</span></div>
+        <div class="rank-row">
+          <span class="rank-chip" id="hud-rank">Cadet</span>
+          <div class="xp"><div class="xp-fill" id="hud-xp"></div></div>
+        </div>
+        <div class="hud-stats">
+          <div class="stat"><span class="label">Credits</span><span class="value" id="hud-credits">0</span></div>
+          <div class="stat"><span class="label">Linked</span><span class="value gold" id="hud-linked">0</span></div>
+          <div class="stat small"><span class="label">Streak</span><span class="value" id="hud-streak">0</span></div>
+        </div>
       </div>
 
-      <div class="hud-contract glass" id="hud-contract">
-        <div class="route">
-          <div class="leg" data-leg="pickup"><img alt="" id="c-from-logo" /><span id="c-from">-</span></div>
-          <div class="arrow"></div>
-          <div class="leg hubleg" data-leg="relay"><img alt="" id="c-hub-logo" /><span>Sonic</span></div>
-          <div class="arrow"></div>
-          <div class="leg" data-leg="deliver"><img alt="" id="c-to-logo" /><span id="c-to">-</span></div>
-        </div>
-        <div class="contract-meta"><span id="c-task">Pick up cargo</span><span id="c-reward">+0</span></div>
-        <div class="timer"><div class="timer-fill" id="c-timer"></div></div>
+      <div class="hud-mission glass" id="hud-mission">
+        <div class="m-head"><span class="m-kind" id="m-kind">Mission</span><span class="m-reward" id="m-reward"></span></div>
+        <div class="m-obj" id="m-obj">-</div>
+        <div class="m-chips" id="m-chips"></div>
+        <div class="timer" id="m-timer-wrap"><div class="timer-fill" id="m-timer"></div></div>
+      </div>
+
+      <div class="boss-bar glass hidden" id="boss-bar">
+        <span>MEV Leviathan</span>
+        <div class="bar"><div class="bar-fill boss" id="boss-fill"></div></div>
       </div>
 
       <div class="hud-right glass">
-        <div class="gauge">
-          <div class="gauge-head"><span class="label">Fuel</span><span class="value" id="hud-fuel-num">100</span></div>
-          <div class="bar"><div class="bar-fill" id="hud-fuel"></div></div>
+        <div class="gauges">
+          <div class="gauge">
+            <div class="gauge-head"><span class="label">Fuel</span><span class="value" id="hud-fuel-num">100</span></div>
+            <div class="bar"><div class="bar-fill" id="hud-fuel"></div></div>
+          </div>
+          <div class="gauge">
+            <div class="gauge-head"><span class="label">Hull</span><span class="value" id="hud-hull-num">100</span></div>
+            <div class="bar"><div class="bar-fill hullbar" id="hud-hull"></div></div>
+          </div>
         </div>
-        <div class="hull" id="hud-hull"></div>
         <div class="hud-buttons">
+          <button class="icon-btn" id="btn-log" aria-label="Logbook"><i class="dot hidden" id="log-dot"></i></button>
           <button class="icon-btn" id="btn-mute" aria-label="Toggle sound"></button>
           <button class="icon-btn" id="btn-pause" aria-label="Pause"></button>
         </div>
@@ -53,11 +65,11 @@
 
       <div id="touch" class="touch hidden">
         <div class="stick" id="stick"><div class="stick-knob" id="stick-knob"></div></div>
+        <button class="touch-btn fire" id="touch-fire">Fire</button>
         <button class="touch-btn" id="touch-brake">Brake</button>
       </div>
     </div>
 
-    <!-- Toasts -->
     <div id="toasts"></div>
 
     <!-- Title -->
@@ -67,19 +79,68 @@
         <div class="eyebrow"><span class="dot"></span> A SODAX swap widget case study</div>
         <h1 class="logo">SPOKE<br /><span>RUNNER</span></h1>
         <p class="pitch">
-          Haul cargo across every network SODAX supports. Every route runs through the Sonic hub.
-          Run low on fuel? Dock at any planet and refuel <strong>for real</strong> with the SODAX swap widget, built right into the station.
+          Link every network SODAX supports to the Sonic hub. Haul cargo, scan planets, rescue freighters and blast the MEV bots
+          trying to sandwich your runs. Low on fuel? Refuel <strong>for real</strong> with the SODAX swap widget built into every station.
         </p>
+        <div class="title-profile" id="title-profile"></div>
         <div class="live-row" id="live-row"><span class="pulse"></span><span id="live-text">Loading networks…</span></div>
         <div class="title-actions">
           <button class="btn btn-gold" id="btn-play">Launch</button>
+          <button class="btn btn-ghost" id="btn-logbook">Logbook</button>
           <button class="btn btn-ghost" id="btn-how">How it's built</button>
         </div>
         <div class="controls-hint">
-          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>E</b> dock · or hold the mouse to fly</span>
-          <span class="touch-only">Left stick to fly · tap Dock near a planet</span>
+          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>Space</b> fire · <b>E</b> dock · or hold the mouse to fly</span>
+          <span class="touch-only">Left stick to fly · Fire to shoot · tap Dock near a planet</span>
         </div>
-        <div class="best" id="title-best"></div>
+      </div>
+    </section>
+
+    <!-- Intro (first run) -->
+    <section id="screen-intro" class="screen dim hidden">
+      <div class="sheet intro-sheet">
+        <div class="eyebrow">Flight briefing</div>
+        <h2>Link the network to the hub</h2>
+        <div class="intro-steps">
+          <div class="intro-step">
+            <img src="./art/crate.png" alt="" />
+            <b><span>1</span> Take missions</b>
+            <p>Cargo runs, bounties, surveys and rescues. Each one links its networks to the Sonic hub.</p>
+          </div>
+          <div class="intro-step">
+            <img src="./art/hub.png" alt="" />
+            <b><span>2</span> Route via Sonic</b>
+            <p>Cargo relays through the hub ring, the same way every SODAX swap settles on Sonic.</p>
+          </div>
+          <div class="intro-step">
+            <img src="./art/mev_bot.png" alt="" />
+            <b><span>3</span> Beat the bots</b>
+            <p>MEV bots ambush your runs. Shoot back, rank up, and take down the Leviathan.</p>
+          </div>
+        </div>
+        <div class="intro-fuel">
+          <img src="./art/fuel_pod.png" alt="" />
+          <p><b>Low on fuel?</b> Grab floating fuel pods, or dock anywhere: refuel with game credits, or for real with the SODAX swap widget built into every station.</p>
+        </div>
+        <div class="intro-controls">
+          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>Space</b> fire · <b>E</b> dock · <b>Esc</b> pause</span>
+          <span class="touch-only">Left stick to fly · Fire to shoot · Brake to slow down · tap Dock near a planet</span>
+        </div>
+        <button class="btn btn-gold" id="intro-go">Let's fly</button>
+      </div>
+    </section>
+
+    <!-- Mission board -->
+    <section id="screen-board" class="screen dim hidden">
+      <div class="sheet board-sheet">
+        <header class="board-head">
+          <div>
+            <div class="eyebrow">Mission board</div>
+            <h2>Pick your next job</h2>
+          </div>
+          <div class="board-linked" id="board-linked"></div>
+        </header>
+        <div class="board-grid" id="board-grid"></div>
       </div>
     </section>
 
@@ -107,10 +168,15 @@
               <span class="card-title">Quick refuel</span>
               <span class="card-sub" id="dock-fuel-sub">-</span>
             </button>
-            <button class="card-btn hidden" id="dock-repair">
+            <button class="card-btn hub-only" id="dock-repair">
               <span class="card-kicker">Game credits</span>
               <span class="card-title">Repair hull</span>
-              <span class="card-sub">80 credits per plate</span>
+              <span class="card-sub" id="dock-repair-sub">-</span>
+            </button>
+            <button class="card-btn hub-only wide" id="dock-shipyard">
+              <span class="card-kicker">Permanent upgrades</span>
+              <span class="card-title">Shipyard</span>
+              <span class="card-sub">Engine, fuel tank, hull plating and blaster. Upgrades carry over to every run.</span>
             </button>
           </div>
         </div>
@@ -118,6 +184,42 @@
           <button class="btn btn-ghost small" id="dock-how">How it's built</button>
           <button class="btn btn-gold" id="dock-leave">Undock</button>
         </footer>
+      </div>
+    </section>
+
+    <!-- Shipyard -->
+    <section id="screen-shipyard" class="screen dim hidden">
+      <div class="sheet shipyard-sheet">
+        <header class="how-head">
+          <div>
+            <div class="eyebrow">Sonic hub · shipyard</div>
+            <h2>Upgrade your runner</h2>
+          </div>
+          <button class="icon-btn close" id="shipyard-close" aria-label="Close"></button>
+        </header>
+        <div class="shipyard-bank">Bank <b id="shipyard-bank">0</b> credits</div>
+        <div class="shipyard-list" id="shipyard-list"></div>
+      </div>
+    </section>
+
+    <!-- Logbook -->
+    <section id="screen-logbook" class="screen dim hidden">
+      <div class="sheet logbook-sheet">
+        <header class="how-head">
+          <div>
+            <div class="eyebrow" id="log-rank">Cadet</div>
+            <h2>Logbook</h2>
+          </div>
+          <button class="icon-btn close" id="logbook-close" aria-label="Close"></button>
+        </header>
+        <div class="tabs" role="tablist">
+          <button class="tab active" data-tab="quests">Quests <i class="tab-count" id="tab-quests-count"></i></button>
+          <button class="tab" data-tab="network">Network</button>
+          <button class="tab" data-tab="stats">Stats</button>
+        </div>
+        <div class="tab-body" id="tab-quests"></div>
+        <div class="tab-body hidden" id="tab-network"></div>
+        <div class="tab-body hidden" id="tab-stats"></div>
       </div>
     </section>
 
@@ -173,46 +275,13 @@
       </div>
     </section>
 
-    <!-- Intro (first run) -->
-    <section id="screen-intro" class="screen dim hidden">
-      <div class="sheet intro-sheet">
-        <div class="eyebrow">Flight briefing</div>
-        <h2>Every route runs through the hub</h2>
-        <div class="intro-steps">
-          <div class="intro-step">
-            <img src="./art/crate.png" alt="" />
-            <b><span>1</span> Pick up</b>
-            <p>Fly to the glowing planet and dock to load the cargo.</p>
-          </div>
-          <div class="intro-step">
-            <img src="./art/hub.png" alt="" />
-            <b><span>2</span> Relay</b>
-            <p>Fly through the Sonic hub ring. Every SODAX route settles on Sonic.</p>
-          </div>
-          <div class="intro-step">
-            <img src="./art/planet_ocean.png" alt="" />
-            <b><span>3</span> Deliver</b>
-            <p>Dock at the destination before the timer runs out. Faster pays more.</p>
-          </div>
-        </div>
-        <div class="intro-fuel">
-          <img src="./art/fuel_pod.png" alt="" />
-          <p><b>Low on fuel?</b> Grab floating fuel pods, or dock anywhere: refuel with game credits, or for real with the SODAX swap widget built into every station.</p>
-        </div>
-        <div class="intro-controls">
-          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>E</b> dock · <b>Esc</b> pause · or hold the mouse to fly</span>
-          <span class="touch-only">Drag the left stick to fly · hold Brake to slow down · tap Dock near a planet</span>
-        </div>
-        <button class="btn btn-gold" id="intro-go">Let's fly</button>
-      </div>
-    </section>
-
     <!-- Pause -->
     <section id="screen-pause" class="screen dim hidden">
       <div class="sheet small-sheet">
         <h2>Paused</h2>
         <div class="stack">
           <button class="btn btn-gold" id="pause-resume">Resume</button>
+          <button class="btn btn-ghost" id="pause-log">Logbook</button>
           <button class="btn btn-ghost" id="pause-how">How it's built</button>
           <button class="btn btn-ghost" id="pause-quit">Quit to title</button>
         </div>
@@ -226,12 +295,26 @@
         <h2 id="over-reason">-</h2>
         <div class="over-stats">
           <div><span class="label">Score</span><span class="value" id="over-score">0</span></div>
-          <div><span class="label">Deliveries</span><span class="value" id="over-deliveries">0</span></div>
+          <div><span class="label">Earned</span><span class="value" id="over-earned">0</span></div>
           <div><span class="label">Best</span><span class="value" id="over-best">0</span></div>
         </div>
+        <p class="over-note" id="over-note">Credits, XP, upgrades and linked networks are saved.</p>
         <div class="stack">
           <button class="btn btn-gold" id="over-again">Fly again</button>
+          <button class="btn btn-ghost" id="over-log">Logbook</button>
           <button class="btn btn-ghost" id="over-title">Title screen</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Victory -->
+    <section id="screen-victory" class="screen dim hidden">
+      <div class="sheet small-sheet victory">
+        <div class="eyebrow">Network connected</div>
+        <h2>Every network is linked to the Sonic hub</h2>
+        <p class="over-note">That's the whole SODAX map, the same hub-and-spoke design that lets one swap cross any of them. Claim your reward in the logbook and keep flying.</p>
+        <div class="stack">
+          <button class="btn btn-gold" id="victory-ok">Keep flying</button>
         </div>
       </div>
     </section>

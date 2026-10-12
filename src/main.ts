@@ -9,6 +9,7 @@ import { loadChains } from './chains';
 import { WorldScene } from './game/WorldScene';
 import { initUI } from './ui';
 import { state } from './state';
+import { profile } from './progress';
 
 async function boot() {
   const [{ hub, spokes, live }] = await Promise.all([
@@ -33,7 +34,7 @@ async function boot() {
   document.getElementById('boot')?.classList.add('gone');
   // Test hook for the end-to-end suite only (tests load the page with ?test=1).
   if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) {
-    (window as unknown as { __spoke: unknown }).__spoke = { scene, state };
+    (window as unknown as { __spoke: unknown }).__spoke = { scene, state, profile };
   }
 }
 

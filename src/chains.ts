@@ -9,10 +9,14 @@ export type Chain = {
   logo: string;
   /** The widget can connect and sign here; other routes quote and hand off to SODAX. */
   executable: boolean;
+  /** The widget lists this network as a destination. */
+  inWidget: boolean;
 };
 
 const HUB = 'sonic';
 const EXECUTABLE_TYPES = new Set(['EVM', 'SOLANA', 'SUI', 'STELLAR', 'NEAR', 'STACKS', 'INJECTIVE']);
+// Networks the live widget does not offer as a destination (checked 2026-10-12 with tests/widget-matrix.mjs).
+const NOT_IN_WIDGET = new Set(['0x1.icon']);
 const CONFIG_URL = 'https://api.sodax.com/v2/be/config/all';
 
 type RawToken = { symbol: string; address: string };
@@ -22,7 +26,7 @@ type RawConfig = { chains: Record<string, RawChain>; swaps: { supportedTokens: R
 const bundledLogo = (key: string) => `${import.meta.env.BASE_URL}chains/${key}.png`;
 
 function fromFallback(): Chain[] {
-  return fallback.map(c => ({ ...c, logo: bundledLogo(c.key), executable: EXECUTABLE_TYPES.has(c.type) }));
+  return fallback.map(c => ({ ...c, logo: bundledLogo(c.key), executable: EXECUTABLE_TYPES.has(c.type), inWidget: !NOT_IN_WIDGET.has(c.key) }));
 }
 
 /**
@@ -48,6 +52,7 @@ export async function loadChains(): Promise<{ hub: Chain; spokes: Chain[]; live:
           gas,
           logo: known.has(key) ? bundledLogo(key) : raw.chain.logo,
           executable: EXECUTABLE_TYPES.has(raw.chain.type),
+          inWidget: !NOT_IN_WIDGET.has(key),
         };
       });
       if (next.some(c => c.key === HUB)) {

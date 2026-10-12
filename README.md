@@ -6,12 +6,14 @@ A space cargo game with the real [SODAX swap widget](https://docs.sodax.com/widg
 
 ![Spoke Runner](public/art/og.jpg)
 
-Every network SODAX supports is a planet, pulled live from the SODAX config, with Sonic as the hub at the center. You haul cargo from one planet to another, and every route has to pass through the hub, the same way every SODAX swap settles on Sonic. Watch your fuel, dodge asteroids, beat the clock.
+Every network SODAX supports is a planet in its own brand colours, pulled live from the SODAX config, with Sonic as the hub at the center. Your goal: **link all 21 networks to the hub.**
 
-When you dock at a planet, the station offers two ways to refuel:
-
-- **Quick refuel** with game credits. The game is fully playable this way.
-- **Real refuel** opens the SODAX swap widget, locked to that planet's gas token. Docking at Base gives you a real swap into ETH on Base, from any token you hold on any network. When the swap completes, your tank fills and you unlock a gold engine trail.
+- **Missions.** After every job, the mission board offers three: cargo runs (pick up, relay through the Sonic hub, deliver), bounties (clear MEV bots camping a network), surveys (scan three networks) and rescues (hold position by a stranded freighter). Every completed mission links its networks to the hub.
+- **Combat.** MEV bots ambush your runs and try to sandwich you. Shoot back. From Pilot rank, the **MEV Leviathan** boss shows up on the board.
+- **Progression.** XP and seven ranks (Cadet to Admiral), a logbook with 14 quests and claimable rewards, a network map of what you've linked and visited, lifetime stats, and a shipyard at the hub for permanent upgrades (engine, fuel tank, hull, blaster). Progress is saved in the browser.
+- **Fuel.** Watch the tank. Grab fuel pods, or dock at any planet:
+  - **Quick refuel** with game credits. The game is fully playable this way.
+  - **Real refuel** opens the SODAX swap widget, locked to that planet's gas token. Docking at Base gives you a real swap into ETH on Base, from any token you hold on any network. When the swap completes, your tank fills and you unlock a gold engine trail.
 
 ## The case study: one iframe, any site
 
@@ -75,9 +77,9 @@ npm run build      # static site in dist/
 npm run test:e2e   # end-to-end suite
 ```
 
-The end-to-end suite (`tests/e2e.mjs`, Playwright) runs 34 checks:
+The end-to-end suite (`tests/e2e.mjs`, Playwright) runs 46 checks:
 
-- **Against the live widget:** flight, docking, contracts, the hub relay, delivery, refuel, damage and game over. It also checks that the real widget loads inside the station with the correct locked gas token, and that spoofed messages are ignored.
+- **Against the live widget:** the briefing, mission board, flight, docking, the hub relay, all five mission types, combat and the Leviathan, quests and rewards, the shipyard, the victory screen, persistence across reloads and game over. It also checks that the real widget loads inside the station with the correct locked gas token, and that spoofed messages are ignored.
 - **Against a local mock widget** that speaks the same message protocol: the started, submitted and completed lifecycle, without moving any funds.
 - **On a phone viewport:** touch controls, tap-to-dock and the full-screen widget.
 - **Production checks:** the briefing, the soundtrack, and that the test hook (enabled with `?test=1`) is off by default.

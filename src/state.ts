@@ -1,58 +1,49 @@
 import type { Chain } from './chains';
+import { profile, save, ship } from './progress';
 
-export type ContractStage = 'pickup' | 'relay' | 'deliver';
+export type Phase = 'title' | 'playing' | 'docked' | 'paused' | 'board' | 'over';
 
-export type Contract = {
-  from: Chain;
-  to: Chain;
-  stage: ContractStage;
-  reward: number;
-  /** ms timestamp (game time) the contract expires at */
-  deadline: number;
-  duration: number;
-};
+export type Mission =
+  | { kind: 'cargo'; from: Chain; to: Chain; stage: 'pickup' | 'relay' | 'deliver'; reward: number; xp: number; deadline: number; duration: number }
+  | { kind: 'bounty'; planet: Chain; total: number; killed: number; spawned: boolean; reward: number; xp: number }
+  | { kind: 'survey'; planets: Chain[]; scanned: string[]; reward: number; xp: number; deadline: number; duration: number }
+  | { kind: 'rescue'; planet: Chain; x: number; y: number; progress: number; reward: number; xp: number }
+  | { kind: 'boss'; reward: number; xp: number; spawned: boolean };
 
-export type Phase = 'title' | 'playing' | 'docked' | 'paused' | 'over';
-
-export const MAX_FUEL = 100;
-export const MAX_HULL = 3;
-
-const STORE_KEY = 'spoke-runner:v1';
-
-type Saved = { best: number; realRefuels: string[]; goldTrail: boolean; muted: boolean; introSeen: boolean };
-
-function load(): Saved {
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORE_KEY) ?? '{}');
-    return {
-      best: Number(raw.best) || 0,
-      realRefuels: Array.isArray(raw.realRefuels) ? raw.realRefuels.filter((k: unknown) => typeof k === 'string') : [],
-      goldTrail: raw.goldTrail === true,
-      muted: raw.muted === true,
-      introSeen: raw.introSeen === true,
-    };
-  } catch {
-    return { best: 0, realRefuels: [], goldTrail: false, muted: false, introSeen: false };
+/** Networks a mission links to the hub when it is completed. */
+export function missionLinks(m: Mission): Chain[] {
+  switch (m.kind) {
+    case 'cargo':
+      return [m.from, m.to];
+    case 'bounty':
+    case 'rescue':
+      return [m.planet];
+    case 'survey':
+      return m.planets;
+    case 'boss':
+      return [];
   }
 }
 
 type Listener = () => void;
 
-class GameState {
+/** Per-run state. Persistent progress lives in progress.ts. */
+class RunState {
   phase: Phase = 'title';
-  credits = 150;
   score = 0;
-  deliveries = 0;
+  earned = 0;
   streak = 0;
-  fuel = MAX_FUEL;
-  hull = MAX_HULL;
-  contract: Contract | null = null;
+  fuel = 100;
+  hull = 100;
+  mission: Mission | null = null;
   dockedAt: Chain | null = null;
-  /** true while the ship sits inside the hub ring */
-  atHub = false;
+  boss: { hp: number; max: number } | null = null;
   gameOverReason = '';
-  saved: Saved = load();
   private listeners = new Set<Listener>();
+
+  get credits() {
+    return profile.bank;
+  }
 
   subscribe(fn: Listener) {
     this.listeners.add(fn);
@@ -63,30 +54,33 @@ class GameState {
     for (const fn of this.listeners) fn();
   }
 
-  persist() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(this.saved));
-  }
-
   reset() {
-    this.credits = 150;
     this.score = 0;
-    this.deliveries = 0;
+    this.earned = 0;
     this.streak = 0;
-    this.fuel = MAX_FUEL;
-    this.hull = MAX_HULL;
-    this.contract = null;
+    this.fuel = ship.maxFuel();
+    this.hull = ship.maxHull();
+    this.mission = null;
     this.dockedAt = null;
-    this.atHub = false;
+    this.boss = null;
     this.gameOverReason = '';
   }
 
-  /** Cosmetic only: the widget's messages carry no amounts, so nothing of value hangs on them. */
-  recordRealRefuel(chainKey: string) {
-    if (!this.saved.realRefuels.includes(chainKey)) this.saved.realRefuels.push(chainKey);
-    this.saved.goldTrail = true;
-    this.persist();
-    this.emit();
+  /** Earn credits: they go straight to the persistent bank, and count toward this run's score. */
+  earn(credits: number, xp = 0) {
+    profile.bank += credits;
+    profile.xp += xp;
+    this.earned += credits;
+    this.score += credits + xp;
+    save();
+  }
+
+  spend(credits: number): boolean {
+    if (profile.bank < credits) return false;
+    profile.bank -= credits;
+    save();
+    return true;
   }
 }
 
-export const state = new GameState();
+export const state = new RunState();
