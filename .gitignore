@@ -1,0 +1,7 @@
+node_modules
+dist
+art-src/job_*
+art-src/*.log
+.DS_Store
+tests/out
+art-src/*.png

@@ -1,0 +1,156 @@
+[
+ {
+  "key": "sonic",
+  "name": "Sonic",
+  "type": "EVM",
+  "gas": "S",
+  "logo": "sonic.png"
+ },
+ {
+  "key": "redbelly",
+  "name": "Redbelly",
+  "type": "EVM",
+  "gas": "RBNT",
+  "logo": "redbelly.png"
+ },
+ {
+  "key": "solana",
+  "name": "Solana",
+  "type": "SOLANA",
+  "gas": "SOL",
+  "logo": "solana.png"
+ },
+ {
+  "key": "0xa86a.avax",
+  "name": "Avalanche",
+  "type": "EVM",
+  "gas": "AVAX",
+  "logo": "0xa86a.avax.png"
+ },
+ {
+  "key": "0xa4b1.arbitrum",
+  "name": "Arbitrum",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "0xa4b1.arbitrum.png"
+ },
+ {
+  "key": "0x2105.base",
+  "name": "Base",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "0x2105.base.png"
+ },
+ {
+  "key": "0xa.optimism",
+  "name": "Optimism",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "0xa.optimism.png"
+ },
+ {
+  "key": "0x38.bsc",
+  "name": "BNB Chain",
+  "type": "EVM",
+  "gas": "BNB",
+  "logo": "0x38.bsc.png"
+ },
+ {
+  "key": "0x89.polygon",
+  "name": "Polygon",
+  "type": "EVM",
+  "gas": "POL",
+  "logo": "0x89.polygon.png"
+ },
+ {
+  "key": "hyper",
+  "name": "Hyper",
+  "type": "EVM",
+  "gas": "HYPE",
+  "logo": "hyper.png"
+ },
+ {
+  "key": "lightlink",
+  "name": "LightLink",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "lightlink.png"
+ },
+ {
+  "key": "injective-1",
+  "name": "Injective",
+  "type": "INJECTIVE",
+  "gas": "INJ",
+  "logo": "injective-1.png"
+ },
+ {
+  "key": "bitcoin",
+  "name": "Bitcoin",
+  "type": "BITCOIN",
+  "gas": "BTC",
+  "logo": "bitcoin.png"
+ },
+ {
+  "key": "stellar",
+  "name": "Stellar",
+  "type": "STELLAR",
+  "gas": "XLM",
+  "logo": "stellar.png"
+ },
+ {
+  "key": "sui",
+  "name": "SUI",
+  "type": "SUI",
+  "gas": "SUI",
+  "logo": "sui.png"
+ },
+ {
+  "key": "0x1.icon",
+  "name": "ICON",
+  "type": "ICON",
+  "gas": "ICX",
+  "logo": "0x1.icon.png"
+ },
+ {
+  "key": "near",
+  "name": "Near",
+  "type": "NEAR",
+  "gas": "NEAR",
+  "logo": "near.png"
+ },
+ {
+  "key": "ethereum",
+  "name": "Ethereum",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "ethereum.png"
+ },
+ {
+  "key": "0x2019.kaia",
+  "name": "Kaia",
+  "type": "EVM",
+  "gas": "KAIA",
+  "logo": "0x2019.kaia.png"
+ },
+ {
+  "key": "stacks",
+  "name": "Stacks",
+  "type": "STACKS",
+  "gas": "STX",
+  "logo": "stacks.png"
+ },
+ {
+  "key": "hedera",
+  "name": "Hedera",
+  "type": "EVM",
+  "gas": "HBAR",
+  "logo": "hedera.png"
+ },
+ {
+  "key": "robinhood",
+  "name": "Robinhood Chain",
+  "type": "EVM",
+  "gas": "ETH",
+  "logo": "robinhood.png"
+ }
+]

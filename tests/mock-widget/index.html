@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Stand-in for widget.sodax.com in the e2e suite: posts the same messages the real widget does. -->
+<html><body style="background:#0d1024;color:#fff;font-family:sans-serif">
+<p id="params"></p>
+<button id="go">Simulate swap</button>
+<script>
+  const parentOrigin = (location.ancestorOrigins && location.ancestorOrigins[0]) || new URL(document.referrer).origin;
+  document.getElementById('params').textContent = location.search;
+  const post = msg => parent.postMessage(msg, parentOrigin);
+  post({ type: 'sodax:ready' });
+  post({ type: 'sodax:resize', height: 900 });
+  window.addEventListener('message', e => { if (e.data?.type === 'sodax:theme') document.body.dataset.theme = e.data.theme; });
+  document.getElementById('go').onclick = async () => {
+    for (const status of ['started', 'submitted', 'completed']) {
+      post({ type: 'sodax:swap', status });
+      await new Promise(r => setTimeout(r, 400));
+    }
+  };
+</script>
+</body></html>

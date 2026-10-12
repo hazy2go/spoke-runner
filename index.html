@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#05060f" />
+    <title>Spoke Runner · a SODAX swap widget case study</title>
+    <meta name="description" content="A cargo run across every SODAX network. Dock anywhere and refuel for real with the embedded SODAX swap widget." />
+    <meta property="og:title" content="Spoke Runner" />
+    <meta property="og:description" content="A space game with the real SODAX swap widget built in. One iframe, any site." />
+    <meta property="og:image" content="https://hazy2go.github.io/spoke-runner/art/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./art/icon.png" />
+  </head>
+  <body>
+    <div id="game"></div>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-left glass">
+        <div class="stat"><span class="label">Credits</span><span class="value" id="hud-credits">0</span></div>
+        <div class="stat"><span class="label">Score</span><span class="value" id="hud-score">0</span></div>
+        <div class="stat small"><span class="label">Streak</span><span class="value" id="hud-streak">0</span></div>
+      </div>
+
+      <div class="hud-contract glass" id="hud-contract">
+        <div class="route">
+          <div class="leg" data-leg="pickup"><img alt="" id="c-from-logo" /><span id="c-from">-</span></div>
+          <div class="arrow"></div>
+          <div class="leg hubleg" data-leg="relay"><img alt="" id="c-hub-logo" /><span>Sonic</span></div>
+          <div class="arrow"></div>
+          <div class="leg" data-leg="deliver"><img alt="" id="c-to-logo" /><span id="c-to">-</span></div>
+        </div>
+        <div class="contract-meta"><span id="c-task">Pick up cargo</span><span id="c-reward">+0</span></div>
+        <div class="timer"><div class="timer-fill" id="c-timer"></div></div>
+      </div>
+
+      <div class="hud-right glass">
+        <div class="gauge">
+          <div class="gauge-head"><span class="label">Fuel</span><span class="value" id="hud-fuel-num">100</span></div>
+          <div class="bar"><div class="bar-fill" id="hud-fuel"></div></div>
+        </div>
+        <div class="hull" id="hud-hull"></div>
+        <div class="hud-buttons">
+          <button class="icon-btn" id="btn-mute" aria-label="Toggle sound"></button>
+          <button class="icon-btn" id="btn-pause" aria-label="Pause"></button>
+        </div>
+      </div>
+
+      <canvas id="minimap" width="360" height="360"></canvas>
+
+      <button id="dock-prompt" class="dock-prompt hidden"><span class="key">E</span><span id="dock-text">Dock</span></button>
+
+      <div id="touch" class="touch hidden">
+        <div class="stick" id="stick"><div class="stick-knob" id="stick-knob"></div></div>
+        <button class="touch-btn" id="touch-brake">Brake</button>
+      </div>
+    </div>
+
+    <!-- Toasts -->
+    <div id="toasts"></div>
+
+    <!-- Title -->
+    <section id="screen-title" class="screen title-screen">
+      <div class="title-bg"></div>
+      <div class="title-content">
+        <div class="eyebrow"><span class="dot"></span> A SODAX swap widget case study</div>
+        <h1 class="logo">SPOKE<br /><span>RUNNER</span></h1>
+        <p class="pitch">
+          Haul cargo across every network SODAX supports. Every route runs through the Sonic hub.
+          Run low on fuel? Dock at any planet and refuel <strong>for real</strong> with the SODAX swap widget, built right into the station.
+        </p>
+        <div class="live-row" id="live-row"><span class="pulse"></span><span id="live-text">Loading networks…</span></div>
+        <div class="title-actions">
+          <button class="btn btn-gold" id="btn-play">Launch</button>
+          <button class="btn btn-ghost" id="btn-how">How it's built</button>
+        </div>
+        <div class="controls-hint">
+          <span class="desktop-only"><b>W</b> thrust · <b>A D</b> steer · <b>S</b> brake · <b>E</b> dock · or hold the mouse to fly</span>
+          <span class="touch-only">Left stick to fly · tap Dock near a planet</span>
+        </div>
+        <div class="best" id="title-best"></div>
+      </div>
+    </section>
+
+    <!-- Docked station -->
+    <section id="screen-dock" class="screen dim hidden">
+      <div class="sheet station">
+        <header class="station-head">
+          <div class="station-logo"><img id="dock-logo" alt="" /></div>
+          <div>
+            <div class="eyebrow" id="dock-eyebrow">Docked</div>
+            <h2 id="dock-title">-</h2>
+          </div>
+          <div class="station-badge hidden" id="dock-real-badge">Refuelled for real</div>
+        </header>
+        <div class="station-body">
+          <div class="station-note" id="dock-contract-note"></div>
+          <div class="station-grid">
+            <button class="card-btn real" id="dock-real">
+              <span class="card-kicker">SODAX swap widget · mainnet</span>
+              <span class="card-title" id="dock-real-title">Real refuel</span>
+              <span class="card-sub" id="dock-real-sub">Get gas on this network with any token you hold.</span>
+            </button>
+            <button class="card-btn" id="dock-fuel">
+              <span class="card-kicker">Game credits</span>
+              <span class="card-title">Quick refuel</span>
+              <span class="card-sub" id="dock-fuel-sub">-</span>
+            </button>
+            <button class="card-btn hidden" id="dock-repair">
+              <span class="card-kicker">Game credits</span>
+              <span class="card-title">Repair hull</span>
+              <span class="card-sub">80 credits per plate</span>
+            </button>
+          </div>
+        </div>
+        <footer class="station-foot">
+          <button class="btn btn-ghost small" id="dock-how">How it's built</button>
+          <button class="btn btn-gold" id="dock-leave">Undock</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- Widget -->
+    <section id="screen-widget" class="screen dim hidden">
+      <div class="sheet widget-sheet">
+        <header class="widget-head">
+          <div class="widget-title">
+            <span class="eyebrow">Refuel station</span>
+            <strong id="widget-title">SODAX swap</strong>
+          </div>
+          <div class="status-pill" id="widget-status" data-status="idle">Waiting for you</div>
+          <button class="icon-btn close" id="widget-close" aria-label="Close"></button>
+        </header>
+        <div class="widget-warning">Real swap on mainnet. Funds move for real; the game itself never needs it.</div>
+        <div class="widget-frame-wrap" id="widget-frame-wrap"></div>
+        <footer class="widget-foot">
+          <a id="widget-newtab" target="_blank" rel="noreferrer">Wallet not showing? Open in a new tab ↗</a>
+          <button class="link-btn" id="widget-how">See the embed code</button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- How it's built -->
+    <section id="screen-how" class="screen dim hidden">
+      <div class="sheet how-sheet">
+        <header class="how-head">
+          <div>
+            <div class="eyebrow">Case study</div>
+            <h2>One iframe. Any site.</h2>
+          </div>
+          <button class="icon-btn close" id="how-close" aria-label="Close"></button>
+        </header>
+        <div class="how-body">
+          <p>
+            Spoke Runner is a normal web game. The swap you can make at every station is the hosted
+            <a href="https://docs.sodax.com/widget" target="_blank" rel="noreferrer">SODAX swap widget</a> in an
+            <code>&lt;iframe&gt;</code>. No package to install, no backend, no keys. The whole integration lives in one file.
+          </p>
+          <ol class="how-steps">
+            <li><b>Build the URL.</b> Each planet locks the destination to its own gas token, so docking at Base means "get ETH on Base".</li>
+            <li><b>Mount the frame.</b> Keep the <code>allow</code> attribute so wallets work inside it.</li>
+            <li><b>Listen.</b> The widget posts <code>sodax:swap</code> statuses; the station lights up as your swap starts, submits and completes.</li>
+          </ol>
+          <div class="code-head"><span id="how-code-label">Embed for this station</span><button class="link-btn" id="how-copy">Copy</button></div>
+          <pre class="code"><code id="how-code"></code></pre>
+          <p class="fine">
+            The widget's messages carry a status only, no amounts or hashes, so a completed swap unlocks cosmetics here
+            (a gold engine trail and a ring around the planet) and nothing of value.
+          </p>
+          <a class="btn btn-ghost small" href="https://github.com/hazy2go/spoke-runner" target="_blank" rel="noreferrer">Source on GitHub ↗</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section id="screen-pause" class="screen dim hidden">
+      <div class="sheet small-sheet">
+        <h2>Paused</h2>
+        <div class="stack">
+          <button class="btn btn-gold" id="pause-resume">Resume</button>
+          <button class="btn btn-ghost" id="pause-how">How it's built</button>
+          <button class="btn btn-ghost" id="pause-quit">Quit to title</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Game over -->
+    <section id="screen-over" class="screen dim hidden">
+      <div class="sheet small-sheet over">
+        <div class="eyebrow red">Run ended</div>
+        <h2 id="over-reason">-</h2>
+        <div class="over-stats">
+          <div><span class="label">Score</span><span class="value" id="over-score">0</span></div>
+          <div><span class="label">Deliveries</span><span class="value" id="over-deliveries">0</span></div>
+          <div><span class="label">Best</span><span class="value" id="over-best">0</span></div>
+        </div>
+        <div class="stack">
+          <button class="btn btn-gold" id="over-again">Fly again</button>
+          <button class="btn btn-ghost" id="over-title">Title screen</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="boot" class="boot"><div class="boot-ring"></div><span>Charging engines</span></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
